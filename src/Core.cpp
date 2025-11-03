@@ -13,42 +13,83 @@ void Creature::normalize() {
 
 void Creature::bounce() {
     // should implement boundary controls here
+    //go side to side
+    if (m_x < 0){
+        m_x = 0;
+        m_dx = std::abs(m_dx);
+    } else if (m_x > m_width){
+        m_x = m_width;
+        m_dx = -std::abs(m_dx);
+    }
+
+// go up and down
+    if (m_y < 0){
+        m_y = 0;
+        m_dy = 1;
+    } else if (m_y > m_height){
+        m_y = m_height;
+        m_dy = -std::abs(m_dy);
+    }
+
 }
 
 
 void GameEvent::print() const {
         
-        switch (type) {
-            case GameEventType::NONE:
-                ofLogVerbose() << "No event." << std::endl;
-                break;
-            case GameEventType::COLLISION:
-                ofLogVerbose() << "Collision event between creatures at (" 
-                << creatureA->getX() << ", " << creatureA->getY() << ") and ("
-                << creatureB->getX() << ", " << creatureB->getY() << ")." << std::endl;
-                break;
-            case GameEventType::CREATURE_ADDED:
-                ofLogVerbose() << "Creature added at (" 
-                << creatureA->getX() << ", " << creatureA->getY() << ")." << std::endl;
-                break;
-            case GameEventType::CREATURE_REMOVED:
-                ofLogVerbose() << "Creature removed at (" 
-                << creatureA->getX() << ", " << creatureA->getY() << ")." << std::endl;
-                break;
-            case GameEventType::GAME_OVER:
-                ofLogVerbose() << "Game Over event." << std::endl;
-                break;
-            case GameEventType::NEW_LEVEL:
-                ofLogVerbose() << "New Game level" << std::endl;
-            default:
-                ofLogVerbose() << "Unknown event type." << std::endl;
-                break;
+ if (type == GameEventType::NONE) {
+        ofLogVerbose() << "Event: NONE";
+    }
+    else if (type == GameEventType::COLLISION) {
+        if (creatureA && creatureB) {
+            ofLogVerbose() << "Event: COLLISION at A("
+                           << creatureA->getX() << ", " << creatureA->getY()
+                           << ") vs B(" << creatureB->getX() << ", " << creatureB->getY() << ")";
+        } else {
+            ofLogVerbose() << "Event: COLLISION";
         }
+    }
+    else if (type == GameEventType::CREATURE_ADDED) {
+        if (creatureA) {
+            ofLogVerbose() << "Event: CREATURE_ADDED at ("
+                           << creatureA->getX() << ", " << creatureA->getY() << ")";
+        } else {
+            ofLogVerbose() << "Event: CREATURE_ADDED";
+        }
+    }
+    else if (type == GameEventType::CREATURE_REMOVED) {
+        if (creatureA) {
+            ofLogVerbose() << "Event: CREATURE_REMOVED at ("
+                           << creatureA->getX() << ", " << creatureA->getY() << ")";
+        } else {
+            ofLogVerbose() << "Event: CREATURE_REMOVED";
+        }
+    }
+    else if (type == GameEventType::GAME_OVER) {
+        ofLogVerbose() << "Event: GAME_OVER";
+    }
+    else if (type == GameEventType::GAME_EXIT) {
+        ofLogVerbose() << "Event: GAME_EXIT";
+    }
+    else if (type == GameEventType::NEW_LEVEL) {
+        ofLogVerbose() << "Event: NEW_LEVEL";
+    }
+    else {
+        ofLogVerbose() << "Event: UNKNOWN";
+    }
+    
 };
 
 // collision detection between two creatures
 bool checkCollision(std::shared_ptr<Creature> a, std::shared_ptr<Creature> b) {
-    return false; 
+    
+    if(!a || !b) return false;
+
+    float dx = (a->getX() - b->getX());
+    float dy = (a->getY() - b->getY());
+    float r = a->getCollisionRadius() + b->getCollisionRadius();
+    
+    return (dx*dx + dy*dy) <= (r*r);
+
 };
 
 
