@@ -8,6 +8,19 @@ void ofApp::setup(){
     backgroundImage.load("background.png");
     backgroundImage.resize(ofGetWindowWidth(), ofGetWindowHeight());
 
+    // Stage 1: music
+    trackA.load("INSENSATA.wav");
+    trackB.load("MALPORTADA.wav");
+
+    trackA.setLoop(false);
+    trackB.setLoop(false);
+
+    trackA.setVolume(musicVolume);
+    trackB.setVolume(musicVolume);
+
+    currentTrack = 0; 
+    trackA.play();
+    trackB.stop();
 
     std::shared_ptr<Aquarium> myAquarium;
     std::shared_ptr<PlayerCreature> player;
@@ -74,6 +87,22 @@ void ofApp::update(){
 
     gameManager->UpdateActiveScene();
     
+    if (musicOn) {
+        ofSoundPlayer* cur   = (currentTrack == 0) ? &trackA : &trackB;
+        ofSoundPlayer* other = (currentTrack == 0) ? &trackB : &trackA;
+
+            if (!cur->isPlaying()) {
+            other->stop();              
+            currentTrack = 1 - currentTrack;
+            cur = (currentTrack == 0) ? &trackA : &trackB;
+            cur->setVolume(musicVolume);
+            cur->setPaused(false);
+            cur->play();
+        }
+    } else {
+        trackA.setPaused(true);
+        trackB.setPaused(true);
+    }
 
 
 }
@@ -86,6 +115,11 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::exit(){
+
+    // Stage 1: stop music
+    if (trackA.isPlaying()) trackA.stop();
+    if (trackB.isPlaying()) trackB.stop();
+
     
 }
 
@@ -135,8 +169,24 @@ void ofApp::keyPressed(int key){
         }
     }
 
-
-    
+    // Stage 1: 'm' toggles mute/pause
+    if (key == 'm' || key == 'M') {
+        musicOn = !musicOn;
+        if (musicOn) {
+            if (currentTrack == 0) {
+                if (!trackA.isPlaying()) trackA.play();
+                trackA.setPaused(false);
+                trackA.setVolume(musicVolume);
+            } else {
+                if (!trackB.isPlaying()) trackB.play();
+                trackB.setPaused(false);
+                trackB.setVolume(musicVolume);
+            }
+        } else {
+            trackA.setPaused(true);
+            trackB.setPaused(true);
+        }
+    }
     
 }
 

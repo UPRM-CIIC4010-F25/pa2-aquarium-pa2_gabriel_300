@@ -40,5 +40,12 @@ class ofApp : public ofBaseApp{
 
 		std::unique_ptr<GameSceneManager> gameManager;
 		std::shared_ptr<AquariumSpriteManager>spriteManager;
+
+		// Music (Stage 1)
+		ofSoundPlayer trackA;
+		ofSoundPlayer trackB;
+		bool musicOn = true;
+		int currentTrack = 0;     
+		float musicVolume = 0.5f; 
 		
 };
