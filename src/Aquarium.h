@@ -9,7 +9,12 @@
 
 enum class AquariumCreatureType {
     NPCreature,
-    BiggerFish
+    BiggerFish,
+
+    FastFish,      
+    ZigZagFish,    
+    PowerUp   
+
 };
 
 string AquariumCreatureTypeToString(AquariumCreatureType t);
@@ -93,12 +98,38 @@ public:
     void draw() const override;
 };
 
+class FastFish : public NPCreature {
+public:
+    FastFish(float x, float y, int speed, std::shared_ptr<GameSprite> sprite);
+    void move() override;
+    void draw() const override;
+};
+
+class ZigZagFish : public NPCreature {
+public:
+    ZigZagFish(float x, float y, int speed, std::shared_ptr<GameSprite> sprite);
+    void move() override;
+    void draw() const override;
+private:
+    int zigCounter = 0;
+};
+
+class PowerUp : public NPCreature {
+public:
+    PowerUp(float x, float y, std::shared_ptr<GameSprite> sprite);
+    void move() override;
+    void draw() const override;
+};
 
 class AquariumSpriteManager {
     public:
         AquariumSpriteManager();
         ~AquariumSpriteManager() = default;
         std::shared_ptr<GameSprite>GetSprite(AquariumCreatureType t);
+        std::shared_ptr<GameSprite> m_fast_fish;    
+        std::shared_ptr<GameSprite> m_zigzag_fish;  
+        std::shared_ptr<GameSprite> m_powerup;      
+
     private:
         std::shared_ptr<GameSprite> m_npc_fish;
         std::shared_ptr<GameSprite> m_big_fish;
@@ -189,4 +220,14 @@ class Level_2 : public AquariumLevel  {
         };
         std::vector<AquariumCreatureType> Repopulate() override;
 
+};
+class Level_3 : public AquariumLevel {
+public:
+    Level_3(int levelNumber, int targetScore) : AquariumLevel(levelNumber, targetScore) {
+        m_levelPopulation.push_back(std::make_shared<AquariumLevelPopulationNode>(AquariumCreatureType::NPCreature, 15));
+        m_levelPopulation.push_back(std::make_shared<AquariumLevelPopulationNode>(AquariumCreatureType::BiggerFish, 6));
+        m_levelPopulation.push_back(std::make_shared<AquariumLevelPopulationNode>(AquariumCreatureType::FastFish, 8));
+        m_levelPopulation.push_back(std::make_shared<AquariumLevelPopulationNode>(AquariumCreatureType::ZigZagFish, 8));
+    }
+    std::vector<AquariumCreatureType> Repopulate() override;
 };

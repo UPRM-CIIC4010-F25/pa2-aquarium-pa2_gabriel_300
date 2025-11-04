@@ -8,6 +8,12 @@ string AquariumCreatureTypeToString(AquariumCreatureType t){
             return "BiggerFish";
         case AquariumCreatureType::NPCreature:
             return "BaseFish";
+
+        case AquariumCreatureType::FastFish:   return "FastFish";
+        case AquariumCreatureType::ZigZagFish: return "ZigZagFish";
+        case AquariumCreatureType::PowerUp:    return "PowerUp";
+
+
         default:
             return "UknownFish";
     }
@@ -113,6 +119,60 @@ BiggerFish::BiggerFish(float x, float y, int speed, std::shared_ptr<GameSprite> 
     m_creatureType = AquariumCreatureType::BiggerFish;
 }
 
+FastFish::FastFish(float x, float y, int speed, std::shared_ptr<GameSprite> sprite)
+: NPCreature(x, y, speed, sprite) {
+    setCollisionRadius(30); 
+}
+
+void FastFish::move() {
+    m_x += m_dx * (m_speed * 1.5f);
+    m_y += m_dy * (m_speed * 1.5f);
+    if (m_sprite) m_sprite->setFlipped(m_dx < 0);
+    bounce();
+}
+
+void FastFish::draw() const {
+    ofLogVerbose() << "FastFish at (" << m_x << ", " << m_y << ") speed " << m_speed;
+    if (m_sprite) m_sprite->draw(m_x, m_y);
+}
+
+ZigZagFish::ZigZagFish(float x, float y, int speed, std::shared_ptr<GameSprite> sprite)
+: NPCreature(x, y, speed, sprite) {
+    setCollisionRadius(30);
+}
+
+void ZigZagFish::move() {
+    m_x += m_dx * m_speed;             
+    zigCounter++;
+    if (zigCounter % 30 == 0) m_dy = -m_dy;  
+    m_y += m_dy * (m_speed * 0.8f);
+    if (m_sprite) m_sprite->setFlipped(m_dx < 0);
+    bounce();
+}
+
+void ZigZagFish::draw() const {
+    ofLogVerbose() << "ZigZagFish at (" << m_x << ", " << m_y << ") speed " << m_speed;
+    if (m_sprite) m_sprite->draw(m_x, m_y);
+}
+
+PowerUp::PowerUp(float x, float y, std::shared_ptr<GameSprite> sprite)
+: NPCreature(x, y, 1, sprite) {
+    setCollisionRadius(14);
+    m_dx = 0;
+    m_dy = 1; 
+}
+
+void PowerUp::move() {
+    m_x += m_dx * m_speed;
+    m_y += m_dy * m_speed;
+    bounce();
+}
+
+void PowerUp::draw() const {
+    if (m_sprite) m_sprite->draw(m_x, m_y);
+}
+
+
 void BiggerFish::move() {
     // Bigger fish might move slower or have different logic
     m_x += m_dx * (m_speed * 0.5); // Moves at half speed
@@ -136,6 +196,11 @@ void BiggerFish::draw() const {
 AquariumSpriteManager::AquariumSpriteManager(){
     this->m_npc_fish = std::make_shared<GameSprite>("base-fish.png", 70,70);
     this->m_big_fish = std::make_shared<GameSprite>("bigger-fish.png", 120, 120);
+
+    this->m_fast_fish   = std::make_shared<GameSprite>("Perch.png",    70, 70);   
+    this->m_zigzag_fish = std::make_shared<GameSprite>("anchovy.png",  70, 70);   
+    this->m_powerup     = std::make_shared<GameSprite>("Perch.png", 32, 32);
+
 }
 
 std::shared_ptr<GameSprite> AquariumSpriteManager::GetSprite(AquariumCreatureType t){
@@ -145,6 +210,14 @@ std::shared_ptr<GameSprite> AquariumSpriteManager::GetSprite(AquariumCreatureTyp
             
         case AquariumCreatureType::NPCreature:
             return std::make_shared<GameSprite>(*this->m_npc_fish);
+
+        case AquariumCreatureType::FastFish:
+            return std::make_shared<GameSprite>(*this->m_fast_fish);
+        case AquariumCreatureType::ZigZagFish:
+            return std::make_shared<GameSprite>(*this->m_zigzag_fish);
+        case AquariumCreatureType::PowerUp:
+            return std::make_shared<GameSprite>(*this->m_powerup);
+
         default:
             return nullptr;
     }
@@ -219,6 +292,29 @@ void Aquarium::SpawnCreature(AquariumCreatureType type) {
         case AquariumCreatureType::BiggerFish:
             this->addCreature(std::make_shared<BiggerFish>(x, y, speed, this->m_sprite_manager->GetSprite(AquariumCreatureType::BiggerFish)));
             break;
+
+        case AquariumCreatureType::FastFish: {
+            auto spr = m_sprite_manager ? m_sprite_manager->GetSprite(type) : nullptr;
+            int x = rand() % this->getWidth();
+            int y = rand() % this->getHeight();
+            addCreature(std::make_shared<FastFish>(x, y, 3, spr));
+            break;
+        }
+        case AquariumCreatureType::ZigZagFish: {
+            auto spr = m_sprite_manager ? m_sprite_manager->GetSprite(type) : nullptr;
+            int x = rand() % this->getWidth();
+            int y = rand() % this->getHeight();
+            addCreature(std::make_shared<ZigZagFish>(x, y, 3, spr));
+            break;
+        }
+        case AquariumCreatureType::PowerUp: {
+            auto spr = m_sprite_manager ? m_sprite_manager->GetSprite(type) : nullptr;
+            int x = rand() % this->getWidth();
+            int y = rand() % this->getHeight();
+            addCreature(std::make_shared<PowerUp>(x, y, spr));
+            break;
+        }
+
         default:
             ofLogError() << "Unknown creature type to spawn!";
             break;
@@ -406,3 +502,16 @@ std::vector<AquariumCreatureType> Level_2::Repopulate() {
     }
     return toRepopulate;
 }
+
+std::vector<AquariumCreatureType> Level_3::Repopulate() {
+    std::vector<AquariumCreatureType> out;
+    for (auto &node : m_levelPopulation) {
+        int delta = node->population - node->currentPopulation;
+        if (delta > 0) {
+            for (int i = 0; i < delta; ++i) out.push_back(node->creatureType);
+            node->currentPopulation += delta;
+        }
+    }
+    return out;
+}
+
