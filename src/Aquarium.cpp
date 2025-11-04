@@ -199,7 +199,8 @@ AquariumSpriteManager::AquariumSpriteManager(){
 
     this->m_fast_fish   = std::make_shared<GameSprite>("Perch.png",    70, 70);   
     this->m_zigzag_fish = std::make_shared<GameSprite>("anchovy.png",  70, 70);   
-    this->m_powerup     = std::make_shared<GameSprite>("Perch.png", 32, 32);
+    this->m_powerup = std::make_shared<GameSprite>("adobogoya.png", 64, 64);
+
 
 }
 
@@ -307,6 +308,7 @@ void Aquarium::SpawnCreature(AquariumCreatureType type) {
             addCreature(std::make_shared<ZigZagFish>(x, y, 3, spr));
             break;
         }
+
         case AquariumCreatureType::PowerUp: {
             auto spr = m_sprite_manager ? m_sprite_manager->GetSprite(type) : nullptr;
             int x = rand() % this->getWidth();
@@ -314,6 +316,7 @@ void Aquarium::SpawnCreature(AquariumCreatureType type) {
             addCreature(std::make_shared<PowerUp>(x, y, spr));
             break;
         }
+
 
         default:
             ofLogError() << "Unknown creature type to spawn!";
@@ -371,6 +374,26 @@ std::shared_ptr<GameEvent> DetectAquariumCollisions(std::shared_ptr<Aquarium> aq
 //  Imlementation of the AquariumScene
 
 void AquariumGameScene::Update(){
+
+    frameCounter++;
+
+    if (frameCounter - lastBatchSpawnFrame >= 1800) {
+        int toSpawn = 2 - powerupsOnScreen;
+        if (toSpawn > 0) {
+            for (int i = 0; i < toSpawn; ++i) {
+                this->m_aquarium->SpawnCreature(AquariumCreatureType::PowerUp);
+                powerupsOnScreen++;
+            }
+        }
+        lastBatchSpawnFrame = frameCounter;
+    }
+
+
+    if (powerupActive && frameCounter >= powerupExpiresAt) {
+        powerupActive = false;
+        this->m_player->setSpeed(storedPlayerSpeed);
+    }
+
     std::shared_ptr<GameEvent> event;
 
     this->m_player->update();
@@ -380,6 +403,22 @@ void AquariumGameScene::Update(){
         if (event != nullptr && event->isCollisionEvent()) {
             ofLogVerbose() << "Collision detected between player and NPC!" << std::endl;
             if(event->creatureB != nullptr){
+
+            auto npcPtr = std::dynamic_pointer_cast<NPCreature>(event->creatureB);
+            if (npcPtr && AquariumCreatureTypeToString(npcPtr->GetType()) == "PowerUp") {
+                if (powerupsOnScreen > 0) powerupsOnScreen--;
+
+                if (!powerupActive) {
+                    storedPlayerSpeed = this->m_player->getSpeed();
+                    this->m_player->setSpeed(storedPlayerSpeed + 2);
+                }
+                powerupActive    = true;
+                powerupExpiresAt = frameCounter + 600; // 10 seconds
+
+                this->m_aquarium->removeCreature(event->creatureB);
+                return; // handled this collision
+            }
+
                 event->print();
                 if(this->m_player->getPower() < event->creatureB->getValue()){
                     ofLogNotice() << "Player is too weak to eat the creature!" << std::endl;

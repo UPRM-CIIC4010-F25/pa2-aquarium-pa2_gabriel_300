@@ -73,12 +73,16 @@ public:
     void loseLife(int debounce);
     void increasePower(int value) { m_power += value; }
     void reduceDamageDebounce();
+    int getSpeed() { return m_speed; }
+    void setSpeed(int s) { m_speed = s; }
     
 private:
     int m_score = 0;
     int m_lives = 3;
     int m_power = 1; // mark current power lvl
     int m_damage_debounce = 0; // frames to wait after eating
+         
+
 };
 
 class NPCreature : public Creature {
@@ -157,6 +161,7 @@ public:
     int getHeight() const { return m_height; }
 
 
+
 private:
     int m_maxPopulation = 0;
     int m_width;
@@ -190,6 +195,14 @@ class AquariumGameScene : public GameScene {
         std::shared_ptr<GameEvent> m_lastEvent;
         string m_name;
         AwaitFrames updateControl{5};
+            //powerup
+        int frameCounter = 0;
+        int lastBatchSpawnFrame = -1800; 
+        int powerupsOnScreen = 0;
+
+        bool powerupActive = false;
+        int powerupExpiresAt = 0;
+        int storedPlayerSpeed = 0;
 };
 
 
